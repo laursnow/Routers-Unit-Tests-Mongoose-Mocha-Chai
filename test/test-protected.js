@@ -86,7 +86,7 @@ function tearDownDb() {
 }
 
 
-describe.only('Protected endpoint', function() {
+describe('Protected endpoint', function() {
   const username = 'exampleUser';
   const password = 'examplePass';
   const email = 'exampleEmail@email.com';
