@@ -273,7 +273,7 @@ describe('Itinerator API resource: Itinerary', function () {
             expiresIn: '7d'
           }
         );
-      
+        let _result;
         const newEntry = {
           title: 'Trip to Philadelphia',
           date_leave: '5/6/2019',
@@ -286,7 +286,7 @@ describe('Itinerator API resource: Itinerary', function () {
           .set( 'Authorization', `Bearer ${ token }` )
           .send(newEntry)
           .then(function (res) {
-            let _result = res.body;
+            _result = res.body;
             _result.should.include.keys('id', 'title', 'date_leave', 'date_return', 'travel', 'lodging', 'activity', 'public', 'timestamp');
             //WHY WON'T USER SHOW UP?!!
             _result.title.should.equal(newEntry.title);
@@ -299,6 +299,7 @@ describe('Itinerator API resource: Itinerary', function () {
             return User.find({username: testUser.username})
               .then(function(user) {
                 user[0].author_of.should.have.lengthOf.at.least(1);
+                assert.that(user[0].author_of.toString()).is.containing(_result.id.toString());   
               });
           });
       });

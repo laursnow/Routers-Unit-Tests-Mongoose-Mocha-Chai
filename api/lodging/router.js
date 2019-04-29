@@ -28,7 +28,7 @@ lodgingRouter.get('/:id', jwtAuth, (req, res) => {
     .then(item => {
       res.status(200).json(item.serialize());
     })
-    .catch(err => console.log('err'));
+    .catch(err => console.log('lodging err'));
 });
 
 lodgingRouter.post('/', jwtAuth, (req, res) => {
@@ -58,16 +58,17 @@ lodgingRouter.put('/:id', jwtAuth, (req, res) => {
     phone: req.body.phone,
     email: req.body.email,
     notes: req.body.notes,
-    confirmation: req.body.confirmation
+    confirmation: req.body.confirmation,
+    itinerary: req.body.itinerary
   };
-  Lodging.updateOne({ _id: req.body.id }, { $set: updated }, { new: true })
+  Lodging.updateOne({ _id: req.params.id }, { $set: updated }, { new: true })
     .then(item => res.status(200).json(updated))
     .catch(err => console.log(err));
 });
 
-lodgingRouter.delete('/', jwtAuth, (req, res) => {
+lodgingRouter.delete('/:id', jwtAuth, (req, res) => {
   Lodging.deleteOne({
-    _id: req.body.id
+    _id: req.params.id
   }).then(() => {
     res
       .status(204)

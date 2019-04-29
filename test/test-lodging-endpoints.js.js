@@ -7,7 +7,7 @@ const mongoose = require('mongoose').set('debug', false);
 mongoose.Promise = global.Promise;
 require('dotenv').config();
 const { Itinerary } = require('../api/itinerary/models');
-const { Activity } = require('../api/activity/models');
+const { Lodging } = require('../api/lodging/models');
 const { User } = require('../api/users/models');
 const { JWT_SECRET } = require('../config');
 const jwt = require('jsonwebtoken');
@@ -34,7 +34,7 @@ let _itineraryId = new ObjectID();
 function seedItineraryData() {
   Itinerary.create({ 
     _id: _itineraryId,
-    title: 'Trip to Philadelphia',
+    title: 'Trip to Boston',
     date_leave: faker.date.future(),
     date_return: faker.date.future(),
     public: faker.random.boolean(),
@@ -42,24 +42,24 @@ function seedItineraryData() {
     user: testUser.id });
 }
 
-function seedActivityData() {
+function seedLodgingData() {
   for (let i = 1; i <= 10; i++) {
-    Activity.create({  
-      date: faker.random.number(),
-      time: faker.date.future(),
+    Lodging.create({  
+      check_in: faker.date.future(),
+      check_out: faker.date.future(),
       address: faker.address.streetAddress(),
       phone: faker.phone.phoneNumber(),
       email: faker.internet.email(),
       notes: faker.random.words(),
-      ticket: faker.image.imageUrl(),
+      confirmation: faker.image.imageUrl(),
       itinerary: _itineraryId })
       .then( function(post) {
-        return Itinerary.findOneAndUpdate({_id: _itineraryId}, { $push: {activity: post.id}});
+        return Itinerary.findOneAndUpdate({_id: _itineraryId}, { $push: {lodging: post.id}});
       });
   } 
 }
 
-describe('Itinerator API resource: Activity', function () {
+describe('Itinerator API resource: Lodging', function () {
   const username = faker.random.word();
   const password = 'dummyPw1234';
   const email = faker.internet.email();
@@ -85,7 +85,7 @@ describe('Itinerator API resource: Activity', function () {
   });
 
   beforeEach(function () {
-    return seedActivityData();
+    return seedLodgingData();
   });
 
   afterEach(function () {
@@ -99,7 +99,7 @@ describe('Itinerator API resource: Activity', function () {
 
   describe('GET endpoint', function () {
 
-    it('should return single selected activity', function () 
+    it('should return single selected lodging', function () 
     {
       const token = jwt.sign(
         {
@@ -115,7 +115,7 @@ describe('Itinerator API resource: Activity', function () {
           expiresIn: '7d'
         }
       );
-      return Activity.findOne()
+      return Lodging.findOne()
         .then( function (res) {
           let result = res;
           return result;
@@ -123,7 +123,7 @@ describe('Itinerator API resource: Activity', function () {
         .then( function(result) {
           let id = result._id;
           return chai.request(app)
-            .get(`/api/activity/${id}`)
+            .get(`/api/lodging/${id}`)
             .set( 'Authorization', `Bearer ${ token }` )
             .then( function(res) {
               let _result = res.body;
@@ -151,7 +151,7 @@ describe('Itinerator API resource: Activity', function () {
           expiresIn: '7d'
         }
       );
-      return Activity.findOne()
+      return Lodging.findOne()
         .then( function (res) {
           let result = res.toJSON();
           return result;
@@ -159,24 +159,24 @@ describe('Itinerator API resource: Activity', function () {
         .then( function(result) {
           let id = result._id;
           return chai.request(app)
-            .get(`/api/activity/${id}`)
+            .get(`/api/lodging/${id}`)
             .set( 'Authorization', `Bearer ${ token }` )
             .then( function(res) {
               let _result = res.body;
-              _result.should.include.keys('date', 'time', 'address', 'phone', 'email', 'notes', 'ticket', 'itinerary');
+              _result.should.include.keys('check_in', 'check_out', 'phone', 'email', 'notes', 'confirmation', 'itinerary');
               _result.itinerary.should.equal(result.itinerary.toString());
               _result.address.should.equal(result.address);
               _result.phone.should.equal(result.phone);
               _result.email.should.equal(result.email);
               _result.notes.should.equal(result.notes);
-              _result.ticket.should.equal(result.ticket);
+              _result.confirmation.should.equal(result.confirmation);
             });
         });
     });
   });
 
   describe('POST endpoint', function () {
-    it('should create a new activity and add record in itinerary',
+    it('should create a new lodging and add record in itinerary',
       function () {
 
         const token = jwt.sign(
@@ -195,30 +195,30 @@ describe('Itinerator API resource: Activity', function () {
         );
         let _result;
         const newEntry = {
-          date: '4/5/2020',
-          time: '11:00 am',
-          address: '1800 Market Street Philadelphia, PA',
-          phone: '215-098-5431',
-          email: 'restaurant@eat.com',
-          notes: 'BYOB',
-          ticket: 'email.gif',
+          check_in: faker.date.future(),
+          check_out: faker.date.future(),
+          address: '500 Market Street Philadelphia, PA',
+          phone: '215-112-5431',
+          email: 'reservations@hotel.com',
+          notes: 'Wyndham Hotel',
+          confirmation: 'email.gif',
           itinerary: _itineraryId
         };
         return chai.request(app)
-          .post('/api/activity')
+          .post('/api/lodging')
           .set( 'Authorization', `Bearer ${ token }` )
           .send(newEntry)
           .then(function (res) {
             _result = res.body;
-            _result.should.include.keys('date', 'time', 'address', 'phone', 'email', 'notes', 'ticket', 'itinerary');
+            _result.should.include.keys('check_in', 'check_out', 'phone', 'email', 'notes', 'confirmation', 'itinerary');
             _result.itinerary.should.equal(newEntry.itinerary._id.toString());
             _result.address.should.equal(newEntry.address);
             _result.phone.should.equal(newEntry.phone);
             _result.email.should.equal(newEntry.email);
             _result.notes.should.equal(newEntry.notes);
-            _result.ticket.should.equal(newEntry.ticket);
+            _result.confirmation.should.equal(newEntry.confirmation);
             _result.id.should.not.be.null;
-            return Activity.findById(_result.id);
+            return Lodging.findById(_result.id);
           })
           .then(function (entry) {
             entry.notes.should.equal(newEntry.notes);
@@ -228,14 +228,14 @@ describe('Itinerator API resource: Activity', function () {
             entry.itinerary.toString().should.equal(newEntry.itinerary.toString());
             return Itinerary.find({_id: _itineraryId})
               .then(function(post) {
-                assert.that(post[0].activity.toString()).is.containing(_result.id.toString());           
+                assert.that(post[0].lodging.toString()).is.containing(_result.id.toString());           
               });
           });
       });
   });
 
   describe('PUT endpoint', function () {
-    it('should update selected activity', function () {
+    it('should update selected lodging', function () {
       const token = jwt.sign(
         {
           user: {
@@ -252,26 +252,26 @@ describe('Itinerator API resource: Activity', function () {
       );
         
       const updateData = {
-        date: '8/5/2020',
-        time: '1:00 pm',
-        address: '235 South 18th Street Philadelphia, PA',
-        phone: '215-098-5431',
-        email: 'restaurant@eat.com',
-        notes: 'BYOB',
-        ticket: 'email.gif',
+        check_in: faker.date.future(),
+        check_out: faker.date.future(),
+        address: '500 Market Street Philadelphia, PA 19106',
+        phone: '215-112-5431',
+        email: 'reservations@wyndham.com',
+        notes: 'Wyndham Hotel, across from Quaker Church.',
+        confirmation: 'email.gif',
         itinerary: _itineraryId
       };
-      return Activity.findOne()
+      return Lodging.findOne()
         .then( function(result) {
           updateData.id = result.id;
           return chai.request(app)
-            .put(`/api/activity/${updateData.id}`)
+            .put(`/api/lodging/${updateData.id}`)
             .set( 'Authorization', `Bearer ${ token }` )
             .send(updateData);
         })
         .then(res => {
           res.should.have.status(200);
-          return Activity.findById(updateData.id);
+          return Lodging.findById(updateData.id);
         })
         .then( function(_result) {
           _result.itinerary.toString().should.equal(_itineraryId.toString());
@@ -279,13 +279,12 @@ describe('Itinerator API resource: Activity', function () {
           _result.address.should.equal(updateData.address);
           _result.phone.should.equal(updateData.phone);
           _result.email.should.equal(updateData.email);
-          _result.time.should.equal(updateData.time);
-          _result.ticket.should.equal(updateData.ticket);
+          _result.confirmation.should.equal(updateData.confirmation);
         });
     });
   });
   describe('DELETE endpoint', function () {
-    it('should delete selected activity and update itinerary record', function () {
+    it('should delete selected lodging and update itinerary record', function () {
     
       const token = jwt.sign(
         {
@@ -304,22 +303,22 @@ describe('Itinerator API resource: Activity', function () {
 
       let entry;
 
-      return Activity.findOne()
+      return Lodging.findOne()
         .then(post => {
           entry = post;
           return chai.request(app)
-            .delete(`/api/activity/${entry.id}`)
+            .delete(`/api/lodging/${entry.id}`)
             .set( 'Authorization', `Bearer ${ token }` );
         })
         .then( function(res) {
           res.should.have.status(204);
-          return Activity.findById(entry.id);
+          return Lodging.findById(entry.id);
         })
         .then(_post => {
           should.not.exist(_post);
           return Itinerary.find({_id: entry.itinerary})
             .then(function(itinerary) {
-              assert.that(itinerary[0].activity.toString()).is.not.containing(entry.id);
+              assert.that(itinerary[0].lodging.toString()).is.not.containing(entry.id);
             });
         });
     });

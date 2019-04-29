@@ -213,88 +213,87 @@ describe('Itinerator API resource: Travel', function () {
     });
   });
 
-  // describe('POST endpoint', function () {
-  //   it.only('should create a new travel and add record in itinerary',
-  //     function () {
+  describe('POST endpoint', function () {
+    it('should create a new travel and add record in itinerary',
+      function () {
 
-  //       const token = jwt.sign(
-  //         {
-  //           user: {
-  //             username,
-  //             email
-  //           }
-  //         },
-  //         JWT_SECRET,
-  //         {
-  //           algorithm: 'HS256',
-  //           subject: username,
-  //           expiresIn: '7d'
-  //         }
-  //       );
-
-  //       const newEntry = {  
-  //         depart: {
-  //           date: faker.date.future(),
-  //           time: faker.random.number(),
-  //           location: faker.address.city(),
-  //           mode: faker.random.word(),
-  //           service: faker.random.word(),
-  //           seat: faker.random.number(),
-  //           notes: faker.random.words(),
-  //           ticket: faker.image.imageUrl() 
-  //         },
-  //         arrive: {
-  //           date: faker.date.future(),
-  //           time: faker.random.number(),
-  //           location: faker.address.city(),
-  //           mode: faker.random.word(),
-  //           service: faker.random.word(),
-  //           seat: faker.random.number(),
-  //           notes: faker.random.words(),
-  //           ticket: faker.image.imageUrl() 
-  //         },
-  //         itinerary: _itineraryId
-  //       };
-  //       return chai.request(app)
-  //         .post('/api/travel')
-  //         .set( 'Authorization', `Bearer ${ token }` )
-  //         .send(newEntry)
-  //         .then(function (res) {
-  //           let _result = res.body;
-  //           console.log(_result, '@@@@@@@');
-  //           _result.should.include.keys('depart', 'arrive', 'itinerary');
-  //           _result.depart.should.include.keys('date', 'time', 'location', 'mode', 'service', 'seat', 'notes', 'ticket');
-  //           _result.arrive.should.include.keys('date', 'time', 'location', 'mode', 'service', 'seat', 'notes', 'ticket');
-  //           _result.itinerary.should.equal(newEntry.itinerary._id.toString());
-  //           _result.itinerary.should.equal(newEntry.itinerary.toString());
-  //           _result._id.should.equal(newEntry._id.toString());
-  //           _result.depart.time.should.equal(newEntry.depart.time);
-  //           _result.depart.location.should.equal(newEntry.depart.location);
-  //           _result.arrive.time.should.equal(newEntry.arrive.time);
-  //           _result.arrive.location.should.equal(newEntry.arrive.location);
-  //           const dates = {_depart: _result.depart.date, depart: newEntry.depart.date, _arrive: _result.arrive.date, arrive: newEntry.arrive.date };
-  //           makeDates(dates);
-  //           _result.id.should.not.be.null;
-  //           return Travel.findById(_result.id);
-  //         })
-  //         .then(function (entry) {
-  //           entry.depart.time.should.equal(newEntry.depart.time);
-  //           entry.depart.location.should.equal(newEntry.depart.location);
-  //           entry.arrive.time.should.equal(newEntry.arrive.time);
-  //           entry.arrive.location.should.equal(newEntry.arrive.location);
-  //           const dates = {_depart: entry.depart.date, depart: newEntry.depart.date, _arrive: entry.arrive.date, arrive: newEntry.arrive.date };
-  //           makeDates(dates);
-  //           entry.itinerary.toString().should.equal(newEntry.itinerary.toString());
-  //           return Itinerary.find({_id: _itineraryId})
-  //             .then(function(post) {
-  //               assert.that(post[0].travel.toString()).is.containing(_itineraryId.toString());            
-  //             });
-  //         });
-  //     });
-  // });
+        const token = jwt.sign(
+          {
+            user: {
+              username,
+              email
+            }
+          },
+          JWT_SECRET,
+          {
+            algorithm: 'HS256',
+            subject: username,
+            expiresIn: '7d'
+          }
+        );
+        let _result;
+        const newEntry = {  
+          depart: {
+            date: faker.date.future(),
+            time: faker.random.number(),
+            location: faker.address.city(),
+            mode: faker.random.word(),
+            service: faker.random.word(),
+            seat: faker.random.number(),
+            notes: faker.random.words(),
+            ticket: faker.image.imageUrl() 
+          },
+          arrive: {
+            date: faker.date.future(),
+            time: faker.random.number(),
+            location: faker.address.city(),
+            mode: faker.random.word(),
+            service: faker.random.word(),
+            seat: faker.random.number(),
+            notes: faker.random.words(),
+            ticket: faker.image.imageUrl() 
+          },
+          itinerary: _itineraryId
+        };
+        return chai.request(app)
+          .post('/api/travel')
+          .set( 'Authorization', `Bearer ${ token }` )
+          .send(newEntry)
+          .then(function (res) {
+            _result = res.body;
+            _result.should.include.keys('depart', 'arrive', 'itinerary');
+            _result.depart.should.include.keys('date', 'time', 'location', 'mode', 'service', 'seat', 'notes', 'ticket');
+            _result.arrive.should.include.keys('date', 'time', 'location', 'mode', 'service', 'seat', 'notes', 'ticket');
+            _result.itinerary.should.equal(newEntry.itinerary._id.toString());
+            _result.itinerary.should.equal(newEntry.itinerary.toString());
+            _result.depart.time.should.equal(newEntry.depart.time.toString());
+            _result.depart.location.should.equal(newEntry.depart.location);
+            _result.arrive.time.should.equal(newEntry.arrive.time.toString());
+            _result.arrive.location.should.equal(newEntry.arrive.location);
+            const dates = {_depart: _result.depart.date, depart: newEntry.depart.date, _arrive: _result.arrive.date, arrive: newEntry.arrive.date };
+            makeDates(dates);
+            _result._id.should.not.be.null;
+            return Travel.findById(_result._id);
+          })
+          .then(function (entry) {
+            entry._id.toString().should.equal(_result._id.toString());
+            entry.depart.time.should.equal(newEntry.depart.time.toString());
+            entry.depart.location.should.equal(newEntry.depart.location);
+            entry.arrive.time.should.equal(newEntry.arrive.time.toString());
+            entry.arrive.location.should.equal(newEntry.arrive.location);
+            const dates = {_depart: entry.depart.date, depart: newEntry.depart.date, _arrive: entry.arrive.date, arrive: newEntry.arrive.date };
+            makeDates(dates);
+            entry.itinerary.toString().should.equal(newEntry.itinerary.toString());
+            return Itinerary.find({_id: _itineraryId})
+              .then(function(post) {
+                assert.that(post[0].travel.toString()).is.containing(_result._id.toString()); 
+              });
+          });
+      });
+  });
 
   describe('PUT endpoint', function () {
-    it.only('should update selected travely', function () {
+    it('should update selected travel document', function () {
       const token = jwt.sign(
         {
           user: {
@@ -309,9 +308,18 @@ describe('Itinerator API resource: Travel', function () {
           expiresIn: '7d'
         }
       );
-      let originalRecord;
       const updateData = {
         depart: {
+          date: faker.date.future(),
+          time: faker.random.number(),
+          location: faker.address.city(),
+          mode: faker.random.word(),
+          service: faker.random.word(),
+          seat: faker.random.number(),
+          notes: faker.random.words(),
+          ticket: faker.image.imageUrl() 
+        },
+        arrive: {
           date: faker.date.future(),
           time: faker.random.number(),
           location: faker.address.city(),
@@ -326,7 +334,6 @@ describe('Itinerator API resource: Travel', function () {
       return Travel.findOne()
         .then( function(result) {
           updateData.id = result.id;
-          originalRecord = result;
           return chai.request(app)
             .put(`/api/travel/${updateData.id}`)
             .set( 'Authorization', `Bearer ${ token }` )
@@ -337,15 +344,14 @@ describe('Itinerator API resource: Travel', function () {
           return Travel.findById(updateData.id);
         })
         .then( function(_result) {
-          console.log(_result);
-          // _result.itinerary.toString().should.equal(updateData.itinerary.toString());
-          // _result._id.should.equal(updateData._id.toString());
-          // _result.depart.time.should.equal(updateData.depart.time);
-          // _result.depart.location.should.equal(updateData.depart.location);
-          // _result.arrive.time.should.equal(originalRecord.arrive.time);
-          // _result.arrive.location.should.equal(originalRecord.arrive.location);
-          // const dates = {_depart: _result.depart.date, depart: updateData.depart.date, _arrive: _result.arrive.date, arrive: originalRecord.arrive.date };
-          // makeDates(dates);
+          _result.itinerary.toString().should.equal(updateData.itinerary.toString());
+          _result._id.toString().should.equal(updateData.id.toString());
+          _result.depart.time.should.equal(updateData.depart.time.toString());
+          _result.depart.location.should.equal(updateData.depart.location);
+          _result.arrive.time.should.equal(updateData.arrive.time.toString());
+          _result.arrive.location.should.equal(updateData.arrive.location);
+          const dates = {_depart: _result.depart.date, depart: updateData.depart.date, _arrive: _result.arrive.date, arrive: updateData.arrive.date };
+          makeDates(dates);
         });
     });
   });
