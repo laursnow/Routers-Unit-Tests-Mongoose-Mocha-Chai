@@ -11,7 +11,7 @@ const { closeServer, runServer, app } = require('../server');
 const { TEST_DATABASE_URL } = require('../config');
 chai.use(chaiHttp);
 
-describe.only('Auth endpoints', function () {
+describe('Auth endpoints', function () {
   const username = 'exampleuser';
   const password = 'examplePass';
   const email = 'email@email.com';
