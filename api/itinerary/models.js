@@ -10,7 +10,7 @@ const itinerarySchema = mongoose.Schema({
   travel: [{type: mongoose.Schema.Types.ObjectId, ref: 'Travel', autopopulate: true}],
   lodging: [{type: mongoose.Schema.Types.ObjectId, ref: 'Lodging', autopopulate: true}],
   activity: [{type: mongoose.Schema.Types.ObjectId, ref: 'Activity', autopopulate: true}],
-  public: { type: Boolean, required: true },
+  public: { type: Boolean },
   timestamp: { type: Date, default: Date.now },
   user: {type: mongoose.Schema.Types.ObjectId, ref: 'User', autopopulate: true}
 },

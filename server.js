@@ -5,7 +5,7 @@ const app = express();
 const mongoose = require('mongoose');
 const morgan = require('morgan');
 const passport = require('passport');
-
+const cors = require('cors');
 const activityRouter = require('./api/activity/router');
 const itineraryRouter = require('./api/itinerary/router');
 const lodgingRouter = require('./api/lodging/router');
@@ -13,6 +13,15 @@ const travelRouter = require('./api/travel/router');
 const userRouter = require('./api/users/router');
 const { localStrategy, jwtStrategy } = require('./auth/strategies');
 const authRouter = require('./auth');
+
+const { PORT, DATABASE_URL, CLIENT_ORIGIN } = require('./config');
+
+app.use(
+  cors({
+    origin: CLIENT_ORIGIN
+  })
+);
+
 app.use('/api/activity', activityRouter);
 app.use('/api/itinerary', itineraryRouter);
 app.use('/api/lodging', lodgingRouter);
@@ -24,21 +33,24 @@ mongoose.Promise = global.Promise;
 passport.use(localStrategy);
 passport.use(jwtStrategy);
 
-const { PORT, DATABASE_URL } = require('./config');
+
+
+
+
 
 // Logging
 app.use(morgan('common'));
 
 // CORS
-app.use(function (req, res, next) {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE');
-  if (req.method === 'OPTIONS') {
-    return res.send(204);
-  }
-  next();
-});
+// app.use(function (req, res, next) {
+//   res.header('Access-Control-Allow-Origin', '*');
+//   res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+//   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE');
+//   if (req.method === 'OPTIONS') {
+//     return res.send(204);
+//   }
+//   next();
+// });
 
 
 let server;

@@ -41,6 +41,16 @@ itineraryRouter.post('/', jwtAuth, (req, res) => {
     .catch(err => console.log(err));
 });
 
+itineraryRouter.get('/db/:id', jwtAuth, (req, res) => {
+  let user = req.params.id;
+  return User.find({username: user}).populate('author_of')
+    .then(item => {
+      let snippets = item.map(snippet => snippet.author_of);
+      res.status(200).json(snippets);
+    }) 
+    .catch(err => console.log('err /db/:id'));
+});
+
 itineraryRouter.get('/:id', jwtAuth, (req, res) => {
   let reqId = req.params.id;
   return Itinerary.findById(reqId)
@@ -77,5 +87,6 @@ itineraryRouter.delete('/:id', jwtAuth, (req, res) => {
 itineraryRouter.use('*', function(req, res) {
   res.status(404).json({ message: 'Not Found' });
 });
+
 
 module.exports = itineraryRouter;
