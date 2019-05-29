@@ -28,11 +28,11 @@ activityRouter.get('/:id', jwtAuth, (req, res) => {
     .then(item => {
       res.status(200).json(item.serialize());
     })
-    .catch(err => console.log('err activity get'));
+    .catch(err => console.log(err));
 });
 
 activityRouter.post('/', jwtAuth, (req, res) => {
-  Activity.create({ 
+  Activity.create({
     date: req.body.date,
     time: req.body.time,
     address: req.body.address,
@@ -44,9 +44,12 @@ activityRouter.post('/', jwtAuth, (req, res) => {
   })
     .then(item => {
       res.status(201).json(item.serialize());
-      return Itinerary.findOneAndUpdate({_id: req.body.itinerary}, { $push: {activity: item.id}});
+      return Itinerary.findOneAndUpdate(
+        { _id: req.body.itinerary },
+        { $push: { activity: item.id } }
+      );
     })
-    .catch(err => console.log('activity post error', err));
+    .catch(err => console.log(err));
 });
 
 activityRouter.put('/:id', jwtAuth, (req, res) => {
@@ -69,12 +72,9 @@ activityRouter.delete('/:id', jwtAuth, (req, res) => {
   let id = req.params.id;
   Activity.deleteOne({
     _id: id
-  })
-    .then(() => {
-      res
-        .status(204)
-        .end();
-    });
+  }).then(() => {
+    res.status(204).end();
+  });
 });
 
 activityRouter.use('*', function(req, res) {

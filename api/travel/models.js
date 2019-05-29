@@ -3,34 +3,37 @@
 const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 
-const travelSchema = mongoose.Schema({
-  depart: {
-    date: Date,
-    time: String,
-    location: String,
-    mode: String,
-    service: String,
-    seat: String,
-    notes: String,
-    ticket: String 
+const travelSchema = mongoose.Schema(
+  {
+    depart: {
+      date: Date,
+      time: String,
+      location: String,
+      mode: String,
+      service: String,
+      seat: String,
+      notes: String,
+      ticket: String
+    },
+    arrive: {
+      date: Date,
+      time: String,
+      location: String,
+      mode: String,
+      service: String,
+      seat: String,
+      notes: String,
+      ticket: String
+    },
+    itinerary: { type: mongoose.Schema.Types.ObjectId, ref: 'Itinerary' }
   },
-  arrive: {
-    date: Date,
-    time: String,
-    location: String,
-    mode: String,
-    service: String,
-    seat: String,
-    notes: String,
-    ticket: String
-  },
-  itinerary: {type: mongoose.Schema.Types.ObjectId, ref: 'Itinerary'}},
-{ collection: 'travel' });
-  
+  { collection: 'travel' }
+);
+
 travelSchema.methods.serialize = function() {
   return {
     id: this._id,
-    depart: { 
+    depart: {
       date: this.date,
       time: this.time,
       location: this.location,
@@ -40,7 +43,7 @@ travelSchema.methods.serialize = function() {
       notes: this.notes,
       ticket: this.ticket
     },
-    arrive: { 
+    arrive: {
       date: this.date,
       time: this.time,
       location: this.location,

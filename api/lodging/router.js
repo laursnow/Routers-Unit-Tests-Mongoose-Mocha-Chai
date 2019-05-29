@@ -32,7 +32,7 @@ lodgingRouter.get('/:id', jwtAuth, (req, res) => {
 });
 
 lodgingRouter.post('/', jwtAuth, (req, res) => {
-  Lodging.create({ 
+  Lodging.create({
     check_in: req.body.check_in,
     check_out: req.body.check_out,
     address: req.body.address,
@@ -45,7 +45,10 @@ lodgingRouter.post('/', jwtAuth, (req, res) => {
     .then(item => {
       res.status(201).json(item.serialize());
       console.log(req.body.itinerary, item.id);
-      return Itinerary.findOneAndUpdate({_id: req.body.itinerary}, { $push: {lodging: item.id}});
+      return Itinerary.findOneAndUpdate(
+        { _id: req.body.itinerary },
+        { $push: { lodging: item.id } }
+      );
     })
     .catch(err => console.log(err));
 });
@@ -70,9 +73,7 @@ lodgingRouter.delete('/:id', jwtAuth, (req, res) => {
   Lodging.deleteOne({
     _id: req.params.id
   }).then(() => {
-    res
-      .status(204)
-      .end();
+    res.status(204).end();
   });
 });
 

@@ -24,19 +24,22 @@ chai.use(chaiHttp);
 
 function tearDownDb() {
   return new Promise((resolve, reject) => {
-    mongoose.connection.dropDatabase()
+    mongoose.connection
+      .dropDatabase()
       .then(result => resolve(result))
       .catch(err => reject(err));
   });
 }
 
-let _idActivity = new ObjectID();
+let _idActivity = new ObjectID(); // Generating random MongoID to populate field(s) that references other collections; this reference is needed to test many API requests as well as check that referenced collections are correctly populating
 let _idTravel = new ObjectID();
 let _idLodging = new ObjectID();
 let testUser;
 
+// Dummy data is created for this endpoint/collection, as well as collections that are referenced
+
 function seedActivityData() {
-  Activity.create({  
+  Activity.create({
     _id: _idActivity,
     date: faker.random.number(),
     time: faker.date.future(),
@@ -45,11 +48,11 @@ function seedActivityData() {
     email: faker.internet.email(),
     notes: faker.random.words(),
     ticket: faker.image.imageUrl()
-  }); 
+  });
 }
 
 function seedLodgingData() {
-  Lodging.create({  
+  Lodging.create({
     _id: _idLodging,
     check_in: faker.date.future(),
     check_out: faker.date.future(),
@@ -60,10 +63,9 @@ function seedLodgingData() {
     confirmation: faker.image.imageUrl()
   });
 }
-  
 
 function seedTravelData() {
-  Travel.create({  
+  Travel.create({
     _id: _idTravel,
     depart: {
       date: faker.date.future(),
@@ -73,7 +75,7 @@ function seedTravelData() {
       service: faker.random.word(),
       seat: faker.random.number(),
       notes: faker.random.words(),
-      ticket: faker.image.imageUrl(), 
+      ticket: faker.image.imageUrl()
     },
     arrive: {
       date: faker.date.future(),
@@ -83,14 +85,14 @@ function seedTravelData() {
       service: faker.random.word(),
       seat: faker.random.number(),
       notes: faker.random.words(),
-      ticket: faker.image.imageUrl(), 
+      ticket: faker.image.imageUrl()
     }
-  }); 
+  });
 }
 
 function seedItineraryData() {
   for (let i = 1; i <= 10; i++) {
-    Itinerary.create({ 
+    Itinerary.create({
       title: faker.random.words(),
       date_leave: faker.date.future(),
       date_return: faker.date.future(),
@@ -99,42 +101,48 @@ function seedItineraryData() {
       activity: _idActivity,
       public: faker.random.boolean(),
       timestamp: faker.date.recent(0),
-      user: testUser.id })
-      .then( function(post) {
-        return User.findOneAndUpdate({username: testUser.username}, { $push: {author_of: post.id}});
-      });
-  }}
+      user: testUser.id
+    }).then(function(post) {
+      return User.findOneAndUpdate(
+        { username: testUser.username },
+        { $push: { author_of: post.id } }
+      );
+    });
+  }
+}
 
-function makeDates (dates) {
+// Logic to convert all dates to comparable, neat format
+
+function makeDates(dates) {
   const makeDatesObj = {};
-  Object.keys(dates).forEach(function (key) {
+  Object.keys(dates).forEach(function(key) {
     let value = dates[key];
     makeDatesObj[key] = new Date(value);
   });
   formatDates(makeDatesObj);
 }
 
-function formatDates (dates) {
+function formatDates(dates) {
   const formatDatesObj = {};
-  Object.keys(dates).forEach(function (key) {
+  Object.keys(dates).forEach(function(key) {
     let value = dates[key];
     formatDatesObj[key] = value.toGMTString();
   });
   checkDates(formatDatesObj);
 }
 
-function checkDates (dates) {
+function checkDates(dates) {
   dates._date_leave.should.equal(dates.date_leave);
   dates._date_return.should.equal(dates.date_return);
   dates._timestamp.should.equal(dates.timestamp);
 }
 
-describe('Itinerator API resource: Itinerary', function () {
+describe('Itinerator API resource: Itinerary', function() {
   const username = faker.random.word(1);
   const password = 'dummyPw1234';
   const email = faker.internet.email();
 
-  before(function () {
+  before(function() {
     return runServer(TEST_DATABASE_URL);
   });
 
@@ -144,41 +152,38 @@ describe('Itinerator API resource: Itinerary', function () {
         username,
         password,
         email
-      })
-        .then((user) => {
-          testUser = user;});
-    }
-    );});
+      }).then(user => {
+        testUser = user;
+      });
+    });
+  });
 
-  beforeEach(function () {
+  beforeEach(function() {
     return seedTravelData();
   });
 
-  beforeEach(function () {
+  beforeEach(function() {
     return seedLodgingData();
   });
 
-  beforeEach(function () {
+  beforeEach(function() {
     return seedActivityData();
   });
 
-  beforeEach(function () {
+  beforeEach(function() {
     return seedItineraryData();
   });
 
-  afterEach(function () {
+  afterEach(function() {
     return tearDownDb();
   });
 
-  after(function () {
+  after(function() {
     return closeServer();
   });
 
-
-  describe('GET endpoint', function () {
-
-    it('should return single selected itinerary', function () 
-    {
+  describe('GET endpoint', function() {
+    it('should return single selected itinerary', function() {
       const token = jwt.sign(
         {
           user: {
@@ -194,16 +199,17 @@ describe('Itinerator API resource: Itinerary', function () {
         }
       );
       return Itinerary.findOne()
-        .then( function (res) {
+        .then(function(res) {
           let result = res;
           return result;
         })
-        .then( function(result) {
+        .then(function(result) {
           let id = result._id;
-          return chai.request(app)
+          return chai
+            .request(app)
             .get(`/api/itinerary/${id}`)
-            .set( 'Authorization', `Bearer ${ token }` )
-            .then((res) => {
+            .set('Authorization', `Bearer ${token}`)
+            .then(res => {
               let _result = res.body;
               let _id = _result.id;
               expect(_result).to.exist;
@@ -213,8 +219,7 @@ describe('Itinerator API resource: Itinerary', function () {
         });
     });
 
-    it('should return post with correct fields', function ()
-    {
+    it('should return post with correct fields', function() {
       const token = jwt.sign(
         {
           user: {
@@ -230,24 +235,48 @@ describe('Itinerator API resource: Itinerary', function () {
         }
       );
       return Itinerary.findOne()
-        .then( function (res) {
+        .then(function(res) {
           let result = res.toJSON();
           return result;
         })
-        .then( function(result) {
+        .then(function(result) {
           let id = result._id;
-          return chai.request(app)
+          return chai
+            .request(app)
             .get(`/api/itinerary/${id}`)
-            .set( 'Authorization', `Bearer ${ token }` )
-            .then( function(res) {
+            .set('Authorization', `Bearer ${token}`)
+            .then(function(res) {
               let _result = res.body;
-              const dates = {_date_leave: _result.date_leave, _date_return: _result.date_return, _timestamp: _result.timestamp, date_leave: result.date_leave, date_return: result.date_return, timestamp: result.timestamp};
+              const dates = {
+                _date_leave: _result.date_leave,
+                _date_return: _result.date_return,
+                _timestamp: _result.timestamp,
+                date_leave: result.date_leave,
+                date_return: result.date_return,
+                timestamp: result.timestamp
+              };
               makeDates(dates);
-              _result.should.include.keys('title', 'date_leave', 'date_return', 'travel', 'lodging', 'activity', 'public', 'timestamp', 'user');
+              _result.should.include.keys(
+                'title',
+                'date_leave',
+                'date_return',
+                'travel',
+                'lodging',
+                'activity',
+                'public',
+                'timestamp',
+                'user'
+              );
               _result.title.should.equal(result.title);
-              _result.travel[0]._id.should.equal(result.travel[0]._id.toString());
-              _result.lodging[0]._id.should.equal(result.lodging[0]._id.toString());
-              _result.activity[0]._id.should.equal(result.activity[0]._id.toString());
+              _result.travel[0]._id.should.equal(
+                result.travel[0]._id.toString()
+              );
+              _result.lodging[0]._id.should.equal(
+                result.lodging[0]._id.toString()
+              );
+              _result.activity[0]._id.should.equal(
+                result.activity[0]._id.toString()
+              );
               _result.public.should.equal(result.public);
               _result.user._id.should.equal(result.user._id.toString());
             });
@@ -255,58 +284,8 @@ describe('Itinerator API resource: Itinerary', function () {
     });
   });
 
-  describe('POST endpoint', function () {
-    it('should create a new itinerary and update user record',
-      function () {
-
-        const token = jwt.sign(
-          {
-            user: {
-              username,
-              email
-            }
-          },
-          JWT_SECRET,
-          {
-            algorithm: 'HS256',
-            subject: username,
-            expiresIn: '7d'
-          }
-        );
-        let _result;
-        const newEntry = {
-          title: 'Trip to Philadelphia',
-          date_leave: '5/6/2019',
-          date_return: '5/12/2019',
-          public: false,
-          user: testUser.id
-        };
-        return chai.request(app)
-          .post('/api/itinerary')
-          .set( 'Authorization', `Bearer ${ token }` )
-          .send(newEntry)
-          .then(function (res) {
-            _result = res.body;
-            _result.should.include.keys('id', 'title', 'date_leave', 'date_return', 'travel', 'lodging', 'activity', 'public', 'timestamp');
-            //WHY WON'T USER SHOW UP?!!
-            _result.title.should.equal(newEntry.title);
-            _result.public.should.equal(newEntry.public);
-            _result.id.should.not.be.null;
-            return Itinerary.findById(_result.id);
-          })
-          .then(function (entry) {
-            entry.title.should.equal(newEntry.title);
-            return User.find({username: testUser.username})
-              .then(function(user) {
-                user[0].author_of.should.have.lengthOf.at.least(1);
-                assert.that(user[0].author_of.toString()).is.containing(_result.id.toString());   
-              });
-          });
-      });
-  });
-
-  describe('PUT endpoint', function () {
-    it('should update selected itinerary', function () {
+  describe('POST endpoint', function() {
+    it('should create a new itinerary and update user record', function() {
       const token = jwt.sign(
         {
           user: {
@@ -321,7 +300,68 @@ describe('Itinerator API resource: Itinerary', function () {
           expiresIn: '7d'
         }
       );
-        
+      let _result;
+      const newEntry = {
+        title: 'Trip to Philadelphia',
+        date_leave: '5/6/2019',
+        date_return: '5/12/2019',
+        public: false,
+        user: testUser.id
+      };
+      return chai
+        .request(app)
+        .post('/api/itinerary')
+        .set('Authorization', `Bearer ${token}`)
+        .send(newEntry)
+        .then(function(res) {
+          _result = res.body;
+          _result.should.include.keys(
+            'id',
+            'title',
+            'date_leave',
+            'date_return',
+            'travel',
+            'lodging',
+            'activity',
+            'public',
+            'timestamp'
+          );
+          _result.title.should.equal(newEntry.title);
+          _result.public.should.equal(newEntry.public);
+          _result.id.should.not.be.null;
+          return Itinerary.findById(_result.id);
+        })
+        .then(function(entry) {
+          entry.title.should.equal(newEntry.title);
+          return User.find({ username: testUser.username }).then(function(
+            user
+          ) {
+            user[0].author_of.should.have.lengthOf.at.least(1);
+            assert
+              .that(user[0].author_of.toString())
+              .is.containing(_result.id.toString());
+          });
+        });
+    });
+  });
+
+  describe('PUT endpoint', function() {
+    it('should update selected itinerary', function() {
+      const token = jwt.sign(
+        {
+          user: {
+            username,
+            email
+          }
+        },
+        JWT_SECRET,
+        {
+          algorithm: 'HS256',
+          subject: username,
+          expiresIn: '7d'
+        }
+      );
+
       const updateData = {
         title: 'Trip to Seoul',
         date_leave: 'Thu, 25 Apr 2019 05:23:53 GMT',
@@ -331,28 +371,35 @@ describe('Itinerator API resource: Itinerary', function () {
         timestamp: faker.date.recent(0)
       };
       return Itinerary.findOne()
-        .then( function(result) {
+        .then(function(result) {
           updateData.id = result.id;
-          return chai.request(app)
+          return chai
+            .request(app)
             .put(`/api/itinerary/${updateData.id}`)
-            .set( 'Authorization', `Bearer ${ token }` )
+            .set('Authorization', `Bearer ${token}`)
             .send(updateData);
         })
         .then(res => {
           res.should.have.status(200);
           return Itinerary.findById(updateData.id);
         })
-        .then( function(_result) {
-          const dates = {_date_leave: _result.date_leave, _date_return: _result.date_return, _timestamp: _result.timestamp, date_leave: updateData.date_leave, date_return: updateData.date_return, timestamp: updateData.timestamp};
+        .then(function(_result) {
+          const dates = {
+            _date_leave: _result.date_leave,
+            _date_return: _result.date_return,
+            _timestamp: _result.timestamp,
+            date_leave: updateData.date_leave,
+            date_return: updateData.date_return,
+            timestamp: updateData.timestamp
+          };
           makeDates(dates);
           _result.title.should.equal(updateData.title);
           _result.public.should.equal(updateData.public);
         });
     });
   });
-  describe('DELETE endpoint', function () {
-    it('should delete selected itinerary and update user record', function () {
-    
+  describe('DELETE endpoint', function() {
+    it('should delete selected itinerary and update user record', function() {
       const token = jwt.sign(
         {
           user: {
@@ -367,29 +414,32 @@ describe('Itinerator API resource: Itinerary', function () {
           expiresIn: '7d'
         }
       );
-    
+
       let entry;
-    
+
       return Itinerary.findOne()
         .then(post => {
           entry = post;
-          return chai.request(app)
+          return chai
+            .request(app)
             .delete(`/api/itinerary/${entry.id}`)
-            .set( 'Authorization', `Bearer ${ token }` )
-            .send({id: post.id});
+            .set('Authorization', `Bearer ${token}`)
+            .send({ id: post.id });
         })
-        .then( function(res) {
+        .then(function(res) {
           res.should.have.status(204);
           return Itinerary.findById(entry.id);
         })
         .then(post => {
           should.not.exist(post);
-          return User.find({username: testUser.username})
-            .then(function(user) {
-              assert.that(user[0].author_of.toString()).is.not.containing(entry.id);
-            });
+          return User.find({ username: testUser.username }).then(function(
+            user
+          ) {
+            assert
+              .that(user[0].author_of.toString())
+              .is.not.containing(entry.id);
+          });
         });
     });
   });
 });
-  

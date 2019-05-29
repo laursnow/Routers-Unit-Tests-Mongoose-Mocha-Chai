@@ -3,7 +3,7 @@
 const express = require('express');
 const app = express();
 
-const { Travel} = require('./models');
+const { Travel } = require('./models');
 const { Itinerary } = require('../itinerary/models');
 const travelRouter = express.Router();
 
@@ -28,12 +28,12 @@ travelRouter.get('/:id', jwtAuth, (req, res) => {
     .then(item => {
       res.status(200).json(item);
     })
-    .catch(err => console.log('err'));
+    .catch(err => console.log(err));
 });
 
 travelRouter.post('/', jwtAuth, (req, res) => {
-  Travel.create({ 
-    depart: { 
+  Travel.create({
+    depart: {
       date: req.body.depart.date,
       time: req.body.depart.time,
       location: req.body.depart.location,
@@ -43,7 +43,7 @@ travelRouter.post('/', jwtAuth, (req, res) => {
       notes: req.body.depart.notes,
       ticket: req.body.depart.ticket
     },
-    arrive: { 
+    arrive: {
       date: req.body.arrive.date,
       time: req.body.arrive.time,
       location: req.body.arrive.location,
@@ -57,15 +57,17 @@ travelRouter.post('/', jwtAuth, (req, res) => {
   })
     .then(item => {
       res.status(201).json(item);
-      return Itinerary.findOneAndUpdate({_id: req.body.itinerary}, { $push: {travel: item.id}});
+      return Itinerary.findOneAndUpdate(
+        { _id: req.body.itinerary },
+        { $push: { travel: item.id } }
+      );
     })
     .catch(err => console.log(err));
 });
 
-
 travelRouter.put('/:id', jwtAuth, (req, res) => {
   const updated = {
-    depart: { 
+    depart: {
       date: req.body.depart.date,
       time: req.body.depart.time,
       location: req.body.depart.location,
@@ -75,7 +77,7 @@ travelRouter.put('/:id', jwtAuth, (req, res) => {
       notes: req.body.depart.notes,
       ticket: req.body.depart.ticket
     },
-    arrive: { 
+    arrive: {
       date: req.body.arrive.date,
       time: req.body.arrive.time,
       location: req.body.arrive.location,
@@ -97,9 +99,7 @@ travelRouter.delete('/:id', jwtAuth, (req, res) => {
   Travel.deleteOne({
     _id: id
   }).then(() => {
-    res
-      .status(204)
-      .end();
+    res.status(204).end();
   });
 });
 

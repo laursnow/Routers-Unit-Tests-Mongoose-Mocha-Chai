@@ -6,9 +6,9 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 require('dotenv').config();
-const {app, runServer, closeServer} = require('../server');
-const {User} = require('../api/users/models');
-const {JWT_SECRET} = require('../config');
+const { app, runServer, closeServer } = require('../server');
+const { User } = require('../api/users/models');
+const { JWT_SECRET } = require('../config');
 const { TEST_DATABASE_URL } = require('../config');
 const { Itinerary } = require('../api/itinerary/models');
 const { Travel } = require('../api/travel/models');
@@ -19,7 +19,7 @@ const faker = require('faker');
 chai.use(chaiHttp);
 
 function seedActivityData() {
-  Activity.create({  
+  Activity.create({
     date: faker.random.number(),
     time: faker.date.future(),
     address: faker.address.streetAddress(),
@@ -27,11 +27,11 @@ function seedActivityData() {
     email: faker.internet.email(),
     notes: faker.random.words(),
     ticket: faker.image.imageUrl()
-  }); 
+  });
 }
-  
+
 function seedLodgingData() {
-  Lodging.create({  
+  Lodging.create({
     check_in: faker.date.future(),
     check_out: faker.date.future(),
     address: faker.address.streetAddress(),
@@ -41,9 +41,9 @@ function seedLodgingData() {
     confirmation: faker.image.imageUrl()
   });
 }
-    
+
 function seedTravelData() {
-  Travel.create({  
+  Travel.create({
     depart: {
       date: faker.date.future(),
       time: faker.random.number(),
@@ -52,7 +52,7 @@ function seedTravelData() {
       service: faker.random.word(),
       seat: faker.random.number(),
       notes: faker.random.words(),
-      ticket: faker.image.imageUrl(), 
+      ticket: faker.image.imageUrl()
     },
     arrive: {
       date: faker.date.future(),
@@ -62,13 +62,13 @@ function seedTravelData() {
       service: faker.random.word(),
       seat: faker.random.number(),
       notes: faker.random.words(),
-      ticket: faker.image.imageUrl(), 
+      ticket: faker.image.imageUrl()
     }
-  }); 
+  });
 }
-  
+
 function seedItineraryData() {
-  Itinerary.create({ 
+  Itinerary.create({
     title: faker.random.words(),
     date_leave: faker.date.future(),
     date_return: faker.date.future(),
@@ -79,12 +79,12 @@ function seedItineraryData() {
 
 function tearDownDb() {
   return new Promise((resolve, reject) => {
-    mongoose.connection.dropDatabase()
+    mongoose.connection
+      .dropDatabase()
       .then(result => resolve(result))
       .catch(err => reject(err));
   });
 }
-
 
 describe('Protected endpoint', function() {
   const username = 'exampleUser';
@@ -95,19 +95,19 @@ describe('Protected endpoint', function() {
     return runServer(TEST_DATABASE_URL);
   });
 
-  beforeEach(function () {
+  beforeEach(function() {
     return seedTravelData();
   });
 
-  beforeEach(function () {
+  beforeEach(function() {
     return seedLodgingData();
   });
 
-  beforeEach(function () {
+  beforeEach(function() {
     return seedActivityData();
   });
 
-  beforeEach(function () {
+  beforeEach(function() {
     return seedItineraryData();
   });
 
@@ -121,7 +121,7 @@ describe('Protected endpoint', function() {
     );
   });
 
-  afterEach(function () {
+  afterEach(function() {
     return tearDownDb();
   });
 
@@ -129,19 +129,19 @@ describe('Protected endpoint', function() {
     return closeServer();
   });
 
-
   describe('get requests', function() {
     it('Should reject requests with no credentials: itinerary', function() {
       return Itinerary.findOne()
-        .then( function (res) {
+        .then(function(res) {
           let result = res;
           return result;
         })
-        .then( function(result) {
+        .then(function(result) {
           let id = result._id;
-          return chai.request(app)
+          return chai
+            .request(app)
             .get(`/api/itinerary/${id}`)
-            .then((res) => {
+            .then(res => {
               expect(res).to.have.status(401);
             })
             .catch(err => {
@@ -154,15 +154,16 @@ describe('Protected endpoint', function() {
 
     it('Should reject requests with no credentials: activity', function() {
       return Activity.findOne()
-        .then( function (res) {
+        .then(function(res) {
           let result = res;
           return result;
         })
-        .then( function(result) {
+        .then(function(result) {
           let id = result._id;
-          return chai.request(app)
+          return chai
+            .request(app)
             .get(`/api/activity/${id}`)
-            .then((res) => {
+            .then(res => {
               expect(res).to.have.status(401);
             })
             .catch(err => {
@@ -172,18 +173,19 @@ describe('Protected endpoint', function() {
             });
         });
     });
-    
+
     it('Should reject requests with no credentials: lodging', function() {
       return Lodging.findOne()
-        .then( function (res) {
+        .then(function(res) {
           let result = res;
           return result;
         })
-        .then( function(result) {
+        .then(function(result) {
           let id = result._id;
-          return chai.request(app)
+          return chai
+            .request(app)
             .get(`/api/lodging/${id}`)
-            .then((res) => {
+            .then(res => {
               expect(res).to.have.status(401);
             })
             .catch(err => {
@@ -196,15 +198,16 @@ describe('Protected endpoint', function() {
 
     it('Should reject requests with no credentials: travel', function() {
       return Travel.findOne()
-        .then( function (res) {
+        .then(function(res) {
           let result = res;
           return result;
         })
-        .then( function(result) {
+        .then(function(result) {
           let id = result._id;
-          return chai.request(app)
+          return chai
+            .request(app)
             .get(`/api/travel/${id}`)
-            .then((res) => {
+            .then(res => {
               expect(res).to.have.status(401);
             })
             .catch(err => {
@@ -229,16 +232,17 @@ describe('Protected endpoint', function() {
       );
 
       return Itinerary.findOne()
-        .then( function (res) {
+        .then(function(res) {
           let result = res;
           return result;
         })
-        .then( function(result) {
+        .then(function(result) {
           let id = result._id;
-          return chai.request(app)
+          return chai
+            .request(app)
             .get(`/api/itinerary/${id}`)
             .set('Authorization', `Bearer ${token}`)
-            .then((res) => {
+            .then(res => {
               expect(res).to.have.status(401);
             })
             .catch(err => {
@@ -265,15 +269,16 @@ describe('Protected endpoint', function() {
       );
 
       return Itinerary.findOne()
-        .then( function (res) {
+        .then(function(res) {
           let result = res;
           return result;
         })
-        .then( function(result) {
+        .then(function(result) {
           let id = result._id;
-          return chai.request(app)
+          return chai
+            .request(app)
             .get(`/api/itinerary/${id}`)
-            .then((res) => {
+            .then(res => {
               expect(res).to.have.status(401);
             })
             .catch(err => {

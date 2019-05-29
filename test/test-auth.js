@@ -11,21 +11,20 @@ const { closeServer, runServer, app } = require('../server');
 const { TEST_DATABASE_URL } = require('../config');
 chai.use(chaiHttp);
 
-describe('Auth endpoints', function () {
+describe('Auth endpoints', function() {
   const username = 'exampleuser';
   const password = 'examplePass';
   const email = 'email@email.com';
   const author_of = [];
   let id = null;
 
-  before(function () {
+  before(function() {
     return runServer(TEST_DATABASE_URL);
   });
 
-  after(function () {
+  after(function() {
     return closeServer();
   });
-
 
   beforeEach(function() {
     return User.hashPassword(password).then(password =>
@@ -34,39 +33,36 @@ describe('Auth endpoints', function () {
         password,
         email,
         author_of
+      }).then(function(user) {
+        id = user.id;
       })
-        .then( function(user) {
-          id = user.id;
-        })
     );
   });
 
-  afterEach(function () {
+  afterEach(function() {
     return User.remove({});
   });
 
-  describe('/auth/login', function () {
-    it('Should reject requests with no credentials', function () {
+  describe('/auth/login', function() {
+    it('Should reject requests with no credentials', function() {
       return chai
         .request(app)
         .post('/auth/login')
-        .then((res) => {
+        .then(res => {
           expect(res).to.have.status(400);
-
-        }
-        )
+        })
         .catch(err => {
           if (err instanceof chai.AssertionError) {
             throw err;
           }
         });
     });
-    it('Should reject requests with incorrect usernames', function () {
+    it('Should reject requests with incorrect usernames', function() {
       return chai
         .request(app)
         .post('/auth/login')
-        .send({ username: 'wrongUsername', password })        
-        .then((res) => {
+        .send({ username: 'wrongUsername', password })
+        .then(res => {
           expect(res).to.have.status(401);
         })
         .catch(err => {
@@ -75,12 +71,12 @@ describe('Auth endpoints', function () {
           }
         });
     });
-    it('Should reject requests with incorrect passwords', function () {
+    it('Should reject requests with incorrect passwords', function() {
       return chai
         .request(app)
         .post('/auth/login')
         .send({ username, password: 'wrongPassword' })
-        .then((res) => {
+        .then(res => {
           expect(res).to.have.status(401);
         })
         .catch(err => {
@@ -89,7 +85,7 @@ describe('Auth endpoints', function () {
           }
         });
     });
-    it('Should return a valid auth token', function () {
+    it('Should return a valid auth token', function() {
       return chai
         .request(app)
         .post('/auth/login')
@@ -109,16 +105,15 @@ describe('Auth endpoints', function () {
             id
           });
         });
-        
     });
   });
 
-  describe('/auth/refresh', function () {
-    it('Should reject requests with no credentials', function () {
+  describe('/auth/refresh', function() {
+    it('Should reject requests with no credentials', function() {
       return chai
         .request(app)
         .post('/auth/refresh')
-        .then((res) => {
+        .then(res => {
           expect(res).to.have.status(401);
         })
         .catch(err => {
@@ -127,7 +122,7 @@ describe('Auth endpoints', function () {
           }
         });
     });
-    it('Should reject requests with an invalid token', function () {
+    it('Should reject requests with an invalid token', function() {
       const token = jwt.sign(
         {
           username,
@@ -144,7 +139,7 @@ describe('Auth endpoints', function () {
         .request(app)
         .post('/auth/refresh')
         .set('Authorization', `Bearer ${token}`)
-        .then((res) => {
+        .then(res => {
           expect(res).to.have.status(401);
         })
         .catch(err => {
@@ -153,7 +148,7 @@ describe('Auth endpoints', function () {
           }
         });
     });
-    it('Should reject requests with an expired token', function () {
+    it('Should reject requests with an expired token', function() {
       const token = jwt.sign(
         {
           user: {
@@ -173,7 +168,7 @@ describe('Auth endpoints', function () {
         .request(app)
         .post('/auth/refresh')
         .set('authorization', `Bearer ${token}`)
-        .then((res) => {
+        .then(res => {
           expect(res).to.have.status(401);
         })
         .catch(err => {
@@ -182,7 +177,7 @@ describe('Auth endpoints', function () {
           }
         });
     });
-    it('Should return a valid auth token with a newer expiry date', function () {
+    it('Should return a valid auth token with a newer expiry date', function() {
       const token = jwt.sign(
         {
           user: {

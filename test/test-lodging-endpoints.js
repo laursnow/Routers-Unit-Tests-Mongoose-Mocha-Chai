@@ -22,7 +22,8 @@ chai.use(chaiHttp);
 
 function tearDownDb() {
   return new Promise((resolve, reject) => {
-    mongoose.connection.dropDatabase()
+    mongoose.connection
+      .dropDatabase()
       .then(result => resolve(result))
       .catch(err => reject(err));
   });
@@ -32,19 +33,20 @@ let testUser;
 let _itineraryId = new ObjectID();
 
 function seedItineraryData() {
-  Itinerary.create({ 
+  Itinerary.create({
     _id: _itineraryId,
     title: 'Trip to Boston',
     date_leave: faker.date.future(),
     date_return: faker.date.future(),
     public: faker.random.boolean(),
     timestamp: faker.date.recent(0),
-    user: testUser.id });
+    user: testUser.id
+  });
 }
 
 function seedLodgingData() {
   for (let i = 1; i <= 10; i++) {
-    Lodging.create({  
+    Lodging.create({
       check_in: faker.date.future(),
       check_out: faker.date.future(),
       address: faker.address.streetAddress(),
@@ -52,19 +54,22 @@ function seedLodgingData() {
       email: faker.internet.email(),
       notes: faker.random.words(),
       confirmation: faker.image.imageUrl(),
-      itinerary: _itineraryId })
-      .then( function(post) {
-        return Itinerary.findOneAndUpdate({_id: _itineraryId}, { $push: {lodging: post.id}});
-      });
-  } 
+      itinerary: _itineraryId
+    }).then(function(post) {
+      return Itinerary.findOneAndUpdate(
+        { _id: _itineraryId },
+        { $push: { lodging: post.id } }
+      );
+    });
+  }
 }
 
-describe('Itinerator API resource: Lodging', function () {
+describe('Itinerator API resource: Lodging', function() {
   const username = faker.random.word();
   const password = 'dummyPw1234';
   const email = faker.internet.email();
 
-  before(function () {
+  before(function() {
     return runServer(TEST_DATABASE_URL);
   });
 
@@ -74,33 +79,30 @@ describe('Itinerator API resource: Lodging', function () {
         username,
         password,
         email
-      })
-        .then((user) => {
-          testUser = user;});
-    }
-    );});
+      }).then(user => {
+        testUser = user;
+      });
+    });
+  });
 
-  beforeEach(function () {
+  beforeEach(function() {
     return seedItineraryData();
   });
 
-  beforeEach(function () {
+  beforeEach(function() {
     return seedLodgingData();
   });
 
-  afterEach(function () {
+  afterEach(function() {
     return tearDownDb();
   });
 
-  after(function () {
+  after(function() {
     return closeServer();
   });
 
-
-  describe('GET endpoint', function () {
-
-    it('should return single selected lodging', function () 
-    {
+  describe('GET endpoint', function() {
+    it('should return single selected lodging', function() {
       const token = jwt.sign(
         {
           user: {
@@ -116,16 +118,17 @@ describe('Itinerator API resource: Lodging', function () {
         }
       );
       return Lodging.findOne()
-        .then( function (res) {
+        .then(function(res) {
           let result = res;
           return result;
         })
-        .then( function(result) {
+        .then(function(result) {
           let id = result._id;
-          return chai.request(app)
+          return chai
+            .request(app)
             .get(`/api/lodging/${id}`)
-            .set( 'Authorization', `Bearer ${ token }` )
-            .then( function(res) {
+            .set('Authorization', `Bearer ${token}`)
+            .then(function(res) {
               let _result = res.body;
               let _id = _result.id;
               expect(_result).to.exist;
@@ -135,8 +138,7 @@ describe('Itinerator API resource: Lodging', function () {
         });
     });
 
-    it('should return post with correct fields', function ()
-    {
+    it('should return post with correct fields', function() {
       const token = jwt.sign(
         {
           user: {
@@ -152,18 +154,27 @@ describe('Itinerator API resource: Lodging', function () {
         }
       );
       return Lodging.findOne()
-        .then( function (res) {
+        .then(function(res) {
           let result = res.toJSON();
           return result;
         })
-        .then( function(result) {
+        .then(function(result) {
           let id = result._id;
-          return chai.request(app)
+          return chai
+            .request(app)
             .get(`/api/lodging/${id}`)
-            .set( 'Authorization', `Bearer ${ token }` )
-            .then( function(res) {
+            .set('Authorization', `Bearer ${token}`)
+            .then(function(res) {
               let _result = res.body;
-              _result.should.include.keys('check_in', 'check_out', 'phone', 'email', 'notes', 'confirmation', 'itinerary');
+              _result.should.include.keys(
+                'check_in',
+                'check_out',
+                'phone',
+                'email',
+                'notes',
+                'confirmation',
+                'itinerary'
+              );
               _result.itinerary.should.equal(result.itinerary.toString());
               _result.address.should.equal(result.address);
               _result.phone.should.equal(result.phone);
@@ -175,67 +186,8 @@ describe('Itinerator API resource: Lodging', function () {
     });
   });
 
-  describe('POST endpoint', function () {
-    it('should create a new lodging and add record in itinerary',
-      function () {
-
-        const token = jwt.sign(
-          {
-            user: {
-              username,
-              email
-            }
-          },
-          JWT_SECRET,
-          {
-            algorithm: 'HS256',
-            subject: username,
-            expiresIn: '7d'
-          }
-        );
-        let _result;
-        const newEntry = {
-          check_in: faker.date.future(),
-          check_out: faker.date.future(),
-          address: '500 Market Street Philadelphia, PA',
-          phone: '215-112-5431',
-          email: 'reservations@hotel.com',
-          notes: 'Wyndham Hotel',
-          confirmation: 'email.gif',
-          itinerary: _itineraryId
-        };
-        return chai.request(app)
-          .post('/api/lodging')
-          .set( 'Authorization', `Bearer ${ token }` )
-          .send(newEntry)
-          .then(function (res) {
-            _result = res.body;
-            _result.should.include.keys('check_in', 'check_out', 'phone', 'email', 'notes', 'confirmation', 'itinerary');
-            _result.itinerary.should.equal(newEntry.itinerary._id.toString());
-            _result.address.should.equal(newEntry.address);
-            _result.phone.should.equal(newEntry.phone);
-            _result.email.should.equal(newEntry.email);
-            _result.notes.should.equal(newEntry.notes);
-            _result.confirmation.should.equal(newEntry.confirmation);
-            _result.id.should.not.be.null;
-            return Lodging.findById(_result.id);
-          })
-          .then(function (entry) {
-            entry.notes.should.equal(newEntry.notes);
-            entry.address.should.equal(newEntry.address);
-            entry.phone.should.equal(newEntry.phone);
-            entry.email.should.equal(newEntry.email);
-            entry.itinerary.toString().should.equal(newEntry.itinerary.toString());
-            return Itinerary.find({_id: _itineraryId})
-              .then(function(post) {
-                assert.that(post[0].lodging.toString()).is.containing(_result.id.toString());           
-              });
-          });
-      });
-  });
-
-  describe('PUT endpoint', function () {
-    it('should update selected lodging', function () {
+  describe('POST endpoint', function() {
+    it('should create a new lodging and add record in itinerary', function() {
       const token = jwt.sign(
         {
           user: {
@@ -250,7 +202,76 @@ describe('Itinerator API resource: Lodging', function () {
           expiresIn: '7d'
         }
       );
-        
+      let _result;
+      const newEntry = {
+        check_in: faker.date.future(),
+        check_out: faker.date.future(),
+        address: '500 Market Street Philadelphia, PA',
+        phone: '215-112-5431',
+        email: 'reservations@hotel.com',
+        notes: 'Wyndham Hotel',
+        confirmation: 'email.gif',
+        itinerary: _itineraryId
+      };
+      return chai
+        .request(app)
+        .post('/api/lodging')
+        .set('Authorization', `Bearer ${token}`)
+        .send(newEntry)
+        .then(function(res) {
+          _result = res.body;
+          _result.should.include.keys(
+            'check_in',
+            'check_out',
+            'phone',
+            'email',
+            'notes',
+            'confirmation',
+            'itinerary'
+          );
+          _result.itinerary.should.equal(newEntry.itinerary._id.toString());
+          _result.address.should.equal(newEntry.address);
+          _result.phone.should.equal(newEntry.phone);
+          _result.email.should.equal(newEntry.email);
+          _result.notes.should.equal(newEntry.notes);
+          _result.confirmation.should.equal(newEntry.confirmation);
+          _result.id.should.not.be.null;
+          return Lodging.findById(_result.id);
+        })
+        .then(function(entry) {
+          entry.notes.should.equal(newEntry.notes);
+          entry.address.should.equal(newEntry.address);
+          entry.phone.should.equal(newEntry.phone);
+          entry.email.should.equal(newEntry.email);
+          entry.itinerary
+            .toString()
+            .should.equal(newEntry.itinerary.toString());
+          return Itinerary.find({ _id: _itineraryId }).then(function(post) {
+            assert
+              .that(post[0].lodging.toString())
+              .is.containing(_result.id.toString());
+          });
+        });
+    });
+  });
+
+  describe('PUT endpoint', function() {
+    it('should update selected lodging', function() {
+      const token = jwt.sign(
+        {
+          user: {
+            username,
+            email
+          }
+        },
+        JWT_SECRET,
+        {
+          algorithm: 'HS256',
+          subject: username,
+          expiresIn: '7d'
+        }
+      );
+
       const updateData = {
         check_in: faker.date.future(),
         check_out: faker.date.future(),
@@ -262,18 +283,19 @@ describe('Itinerator API resource: Lodging', function () {
         itinerary: _itineraryId
       };
       return Lodging.findOne()
-        .then( function(result) {
+        .then(function(result) {
           updateData.id = result.id;
-          return chai.request(app)
+          return chai
+            .request(app)
             .put(`/api/lodging/${updateData.id}`)
-            .set( 'Authorization', `Bearer ${ token }` )
+            .set('Authorization', `Bearer ${token}`)
             .send(updateData);
         })
         .then(res => {
           res.should.have.status(200);
           return Lodging.findById(updateData.id);
         })
-        .then( function(_result) {
+        .then(function(_result) {
           _result.itinerary.toString().should.equal(_itineraryId.toString());
           _result.notes.should.equal(updateData.notes);
           _result.address.should.equal(updateData.address);
@@ -283,9 +305,8 @@ describe('Itinerator API resource: Lodging', function () {
         });
     });
   });
-  describe('DELETE endpoint', function () {
-    it('should delete selected lodging and update itinerary record', function () {
-    
+  describe('DELETE endpoint', function() {
+    it('should delete selected lodging and update itinerary record', function() {
       const token = jwt.sign(
         {
           user: {
@@ -306,22 +327,25 @@ describe('Itinerator API resource: Lodging', function () {
       return Lodging.findOne()
         .then(post => {
           entry = post;
-          return chai.request(app)
+          return chai
+            .request(app)
             .delete(`/api/lodging/${entry.id}`)
-            .set( 'Authorization', `Bearer ${ token }` );
+            .set('Authorization', `Bearer ${token}`);
         })
-        .then( function(res) {
+        .then(function(res) {
           res.should.have.status(204);
           return Lodging.findById(entry.id);
         })
         .then(_post => {
           should.not.exist(_post);
-          return Itinerary.find({_id: entry.itinerary})
-            .then(function(itinerary) {
-              assert.that(itinerary[0].lodging.toString()).is.not.containing(entry.id);
-            });
+          return Itinerary.find({ _id: entry.itinerary }).then(function(
+            itinerary
+          ) {
+            assert
+              .that(itinerary[0].lodging.toString())
+              .is.not.containing(entry.id);
+          });
         });
     });
   });
 });
-  

@@ -22,29 +22,31 @@ chai.use(chaiHttp);
 
 function tearDownDb() {
   return new Promise((resolve, reject) => {
-    mongoose.connection.dropDatabase()
+    mongoose.connection
+      .dropDatabase()
       .then(result => resolve(result))
       .catch(err => reject(err));
   });
 }
 
 let testUser;
-let _itineraryId = new ObjectID();
+let _itineraryId = new ObjectID(); // Generating random MongoID to populate field(s) that references other collections; this reference is needed to test many API requests as well as check that referenced collections are correctly populating
 
 function seedItineraryData() {
-  Itinerary.create({ 
+  Itinerary.create({
     _id: _itineraryId,
     title: 'Trip to Philadelphia',
     date_leave: faker.date.future(),
     date_return: faker.date.future(),
     public: faker.random.boolean(),
     timestamp: faker.date.recent(0),
-    user: testUser.id });
+    user: testUser.id
+  });
 }
 
 function seedActivityData() {
   for (let i = 1; i <= 10; i++) {
-    Activity.create({  
+    Activity.create({
       date: faker.random.number(),
       time: faker.date.future(),
       address: faker.address.streetAddress(),
@@ -52,19 +54,22 @@ function seedActivityData() {
       email: faker.internet.email(),
       notes: faker.random.words(),
       ticket: faker.image.imageUrl(),
-      itinerary: _itineraryId })
-      .then( function(post) {
-        return Itinerary.findOneAndUpdate({_id: _itineraryId}, { $push: {activity: post.id}});
-      });
-  } 
+      itinerary: _itineraryId
+    }).then(function(post) {
+      return Itinerary.findOneAndUpdate(
+        { _id: _itineraryId },
+        { $push: { activity: post.id } }
+      );
+    });
+  }
 }
 
-describe('Itinerator API resource: Activity', function () {
+describe('Itinerator API resource: Activity', function() {
   const username = faker.random.word();
   const password = 'dummyPw1234';
   const email = faker.internet.email();
 
-  before(function () {
+  before(function() {
     return runServer(TEST_DATABASE_URL);
   });
 
@@ -74,33 +79,30 @@ describe('Itinerator API resource: Activity', function () {
         username,
         password,
         email
-      })
-        .then((user) => {
-          testUser = user;});
-    }
-    );});
+      }).then(user => {
+        testUser = user;
+      });
+    });
+  });
 
-  beforeEach(function () {
+  beforeEach(function() {
     return seedItineraryData();
   });
 
-  beforeEach(function () {
+  beforeEach(function() {
     return seedActivityData();
   });
 
-  afterEach(function () {
+  afterEach(function() {
     return tearDownDb();
   });
 
-  after(function () {
+  after(function() {
     return closeServer();
   });
 
-
-  describe('GET endpoint', function () {
-
-    it('should return single selected activity', function () 
-    {
+  describe('GET endpoint', function() {
+    it('should return single selected activity', function() {
       const token = jwt.sign(
         {
           user: {
@@ -116,16 +118,17 @@ describe('Itinerator API resource: Activity', function () {
         }
       );
       return Activity.findOne()
-        .then( function (res) {
+        .then(function(res) {
           let result = res;
           return result;
         })
-        .then( function(result) {
+        .then(function(result) {
           let id = result._id;
-          return chai.request(app)
+          return chai
+            .request(app)
             .get(`/api/activity/${id}`)
-            .set( 'Authorization', `Bearer ${ token }` )
-            .then( function(res) {
+            .set('Authorization', `Bearer ${token}`)
+            .then(function(res) {
               let _result = res.body;
               let _id = _result.id;
               expect(_result).to.exist;
@@ -135,8 +138,7 @@ describe('Itinerator API resource: Activity', function () {
         });
     });
 
-    it('should return post with correct fields', function ()
-    {
+    it('should return post with correct fields', function() {
       const token = jwt.sign(
         {
           user: {
@@ -152,18 +154,28 @@ describe('Itinerator API resource: Activity', function () {
         }
       );
       return Activity.findOne()
-        .then( function (res) {
+        .then(function(res) {
           let result = res.toJSON();
           return result;
         })
-        .then( function(result) {
+        .then(function(result) {
           let id = result._id;
-          return chai.request(app)
+          return chai
+            .request(app)
             .get(`/api/activity/${id}`)
-            .set( 'Authorization', `Bearer ${ token }` )
-            .then( function(res) {
+            .set('Authorization', `Bearer ${token}`)
+            .then(function(res) {
               let _result = res.body;
-              _result.should.include.keys('date', 'time', 'address', 'phone', 'email', 'notes', 'ticket', 'itinerary');
+              _result.should.include.keys(
+                'date',
+                'time',
+                'address',
+                'phone',
+                'email',
+                'notes',
+                'ticket',
+                'itinerary'
+              );
               _result.itinerary.should.equal(result.itinerary.toString());
               _result.address.should.equal(result.address);
               _result.phone.should.equal(result.phone);
@@ -175,67 +187,8 @@ describe('Itinerator API resource: Activity', function () {
     });
   });
 
-  describe('POST endpoint', function () {
-    it('should create a new activity and add record in itinerary',
-      function () {
-
-        const token = jwt.sign(
-          {
-            user: {
-              username,
-              email
-            }
-          },
-          JWT_SECRET,
-          {
-            algorithm: 'HS256',
-            subject: username,
-            expiresIn: '7d'
-          }
-        );
-        let _result;
-        const newEntry = {
-          date: '4/5/2020',
-          time: '11:00 am',
-          address: '1800 Market Street Philadelphia, PA',
-          phone: '215-098-5431',
-          email: 'restaurant@eat.com',
-          notes: 'BYOB',
-          ticket: 'email.gif',
-          itinerary: _itineraryId
-        };
-        return chai.request(app)
-          .post('/api/activity')
-          .set( 'Authorization', `Bearer ${ token }` )
-          .send(newEntry)
-          .then(function (res) {
-            _result = res.body;
-            _result.should.include.keys('date', 'time', 'address', 'phone', 'email', 'notes', 'ticket', 'itinerary');
-            _result.itinerary.should.equal(newEntry.itinerary._id.toString());
-            _result.address.should.equal(newEntry.address);
-            _result.phone.should.equal(newEntry.phone);
-            _result.email.should.equal(newEntry.email);
-            _result.notes.should.equal(newEntry.notes);
-            _result.ticket.should.equal(newEntry.ticket);
-            _result.id.should.not.be.null;
-            return Activity.findById(_result.id);
-          })
-          .then(function (entry) {
-            entry.notes.should.equal(newEntry.notes);
-            entry.address.should.equal(newEntry.address);
-            entry.phone.should.equal(newEntry.phone);
-            entry.email.should.equal(newEntry.email);
-            entry.itinerary.toString().should.equal(newEntry.itinerary.toString());
-            return Itinerary.find({_id: _itineraryId})
-              .then(function(post) {
-                assert.that(post[0].activity.toString()).is.containing(_result.id.toString());           
-              });
-          });
-      });
-  });
-
-  describe('PUT endpoint', function () {
-    it('should update selected activity', function () {
+  describe('POST endpoint', function() {
+    it('should create a new activity and add record in itinerary', function() {
       const token = jwt.sign(
         {
           user: {
@@ -250,7 +203,77 @@ describe('Itinerator API resource: Activity', function () {
           expiresIn: '7d'
         }
       );
-        
+      let _result;
+      const newEntry = {
+        date: '4/5/2020',
+        time: '11:00 am',
+        address: '1800 Market Street Philadelphia, PA',
+        phone: '215-098-5431',
+        email: 'restaurant@eat.com',
+        notes: 'BYOB',
+        ticket: 'email.gif',
+        itinerary: _itineraryId
+      };
+      return chai
+        .request(app)
+        .post('/api/activity')
+        .set('Authorization', `Bearer ${token}`)
+        .send(newEntry)
+        .then(function(res) {
+          _result = res.body;
+          _result.should.include.keys(
+            'date',
+            'time',
+            'address',
+            'phone',
+            'email',
+            'notes',
+            'ticket',
+            'itinerary'
+          );
+          _result.itinerary.should.equal(newEntry.itinerary._id.toString());
+          _result.address.should.equal(newEntry.address);
+          _result.phone.should.equal(newEntry.phone);
+          _result.email.should.equal(newEntry.email);
+          _result.notes.should.equal(newEntry.notes);
+          _result.ticket.should.equal(newEntry.ticket);
+          _result.id.should.not.be.null;
+          return Activity.findById(_result.id);
+        })
+        .then(function(entry) {
+          entry.notes.should.equal(newEntry.notes);
+          entry.address.should.equal(newEntry.address);
+          entry.phone.should.equal(newEntry.phone);
+          entry.email.should.equal(newEntry.email);
+          entry.itinerary
+            .toString()
+            .should.equal(newEntry.itinerary.toString());
+          return Itinerary.find({ _id: _itineraryId }).then(function(post) {
+            assert
+              .that(post[0].activity.toString())
+              .is.containing(_result.id.toString());
+          });
+        });
+    });
+  });
+
+  describe('PUT endpoint', function() {
+    it('should update selected activity', function() {
+      const token = jwt.sign(
+        {
+          user: {
+            username,
+            email
+          }
+        },
+        JWT_SECRET,
+        {
+          algorithm: 'HS256',
+          subject: username,
+          expiresIn: '7d'
+        }
+      );
+
       const updateData = {
         date: '8/5/2020',
         time: '1:00 pm',
@@ -262,18 +285,19 @@ describe('Itinerator API resource: Activity', function () {
         itinerary: _itineraryId
       };
       return Activity.findOne()
-        .then( function(result) {
+        .then(function(result) {
           updateData.id = result.id;
-          return chai.request(app)
+          return chai
+            .request(app)
             .put(`/api/activity/${updateData.id}`)
-            .set( 'Authorization', `Bearer ${ token }` )
+            .set('Authorization', `Bearer ${token}`)
             .send(updateData);
         })
         .then(res => {
           res.should.have.status(200);
           return Activity.findById(updateData.id);
         })
-        .then( function(_result) {
+        .then(function(_result) {
           _result.itinerary.toString().should.equal(_itineraryId.toString());
           _result.notes.should.equal(updateData.notes);
           _result.address.should.equal(updateData.address);
@@ -284,9 +308,8 @@ describe('Itinerator API resource: Activity', function () {
         });
     });
   });
-  describe('DELETE endpoint', function () {
-    it('should delete selected activity and update itinerary record', function () {
-    
+  describe('DELETE endpoint', function() {
+    it('should delete selected activity and update itinerary record', function() {
       const token = jwt.sign(
         {
           user: {
@@ -307,22 +330,25 @@ describe('Itinerator API resource: Activity', function () {
       return Activity.findOne()
         .then(post => {
           entry = post;
-          return chai.request(app)
+          return chai
+            .request(app)
             .delete(`/api/activity/${entry.id}`)
-            .set( 'Authorization', `Bearer ${ token }` );
+            .set('Authorization', `Bearer ${token}`);
         })
-        .then( function(res) {
+        .then(function(res) {
           res.should.have.status(204);
           return Activity.findById(entry.id);
         })
         .then(_post => {
           should.not.exist(_post);
-          return Itinerary.find({_id: entry.itinerary})
-            .then(function(itinerary) {
-              assert.that(itinerary[0].activity.toString()).is.not.containing(entry.id);
-            });
+          return Itinerary.find({ _id: entry.itinerary }).then(function(
+            itinerary
+          ) {
+            assert
+              .that(itinerary[0].activity.toString())
+              .is.not.containing(entry.id);
+          });
         });
     });
   });
 });
-  

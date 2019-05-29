@@ -3,7 +3,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const userRouter = express.Router();
 const jsonParser = bodyParser.json();
-const {User} = require('./models');
+const { User } = require('./models');
 
 userRouter.post('/', jsonParser, (req, res) => {
   const requiredFields = ['username', 'password', 'email'];
@@ -37,11 +37,24 @@ userRouter.post('/', jsonParser, (req, res) => {
     return res.status(422).json({
       code: 422,
       reason: 'ValidationError',
-      message: 'Password must be between 8 and 72 characters',
+      message: 'Password must be between 8 and 72 characters'
     });
-  } 
-
-  return User.find({username})
+  }
+  
+  function validateEmail(email) {
+    var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(String(email).toLowerCase());
+  }
+  
+  if (!validateEmail(email)) {
+    return res.status(422).json({
+      code: 422,
+      reason: 'ValidationError',
+      message: 'Invalid e-mail address',
+      location: 'email'
+    });
+  }
+  return User.find({ username })
     .count()
     .then(count => {
       if (count > 0) {
@@ -53,7 +66,7 @@ userRouter.post('/', jsonParser, (req, res) => {
         });
       }
 
-      return User.find({email})
+      return User.find({ email })
         .count()
         .then(count => {
           if (count > 0) {
@@ -80,17 +93,18 @@ userRouter.post('/', jsonParser, (req, res) => {
               if (err.name === 'ValidationError') {
                 res.status(412).json(err.message);
               }
-              res.status(500).json({code: 500, message: 'Internal server error'});
+              res
+                .status(500)
+                .json({ code: 500, message: 'Internal server error' });
             });
-        });      
+        });
     })
     .catch(err => {
       if (err.reason === 'ValidationError') {
         return res.status(err.code).json(err);
       }
-      res.status(500).json({code: 500, message: 'Internal server error'});
+      res.status(500).json({ code: 500, message: 'Internal server error' });
     });
 });
-
 
 module.exports = userRouter;

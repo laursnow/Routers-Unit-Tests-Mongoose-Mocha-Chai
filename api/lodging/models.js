@@ -3,17 +3,20 @@
 const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 
-const lodgingSchema = mongoose.Schema({
-  check_in: Date,
-  check_out: Date,
-  address: String,
-  phone: String,
-  email: String,
-  notes: String,
-  confirmation: String,
-  itinerary: {type: mongoose.Schema.Types.ObjectId, ref: 'Itinerary'}},
-{ collection: 'lodging' });
-  
+const lodgingSchema = mongoose.Schema(
+  {
+    check_in: Date,
+    check_out: Date,
+    address: String,
+    phone: String,
+    email: String,
+    notes: String,
+    confirmation: String,
+    itinerary: { type: mongoose.Schema.Types.ObjectId, ref: 'Itinerary' }
+  },
+  { collection: 'lodging' }
+);
+
 lodgingSchema.methods.serialize = function() {
   return {
     id: this._id,
